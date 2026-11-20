@@ -1,0 +1,374 @@
+```html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>منصة إدارة المكاتب 2 | Office Management II — المطور Haitham Afana</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Cairo', 'Tajawal', 'sans-serif'],
+            display: ['Cairo', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            },
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Cairo', 'Tajawal', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+
+    /* Smooth 3D card flip for flashcards */
+    .perspective-1200 {
+      perspective: 1200px;
+    }
+    .preserve-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+
+    /* Highlighted search matches */
+    mark.search-hit {
+      background-color: #fef08a;
+      color: #1e1b4b;
+      padding: 0.05rem 0.25rem;
+      border-radius: 0.25rem;
+      font-weight: 700;
+    }
+
+    /* Subtle scrollbar for tables and drawers */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background: #fff !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800 selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- Toast / Status Banner (replaces alert/confirm) -->
+  <div id="toastBanner" class="fixed bottom-5 left-5 z-50 hidden max-w-sm rounded-xl bg-slate-900 text-white px-4 py-3 shadow-xl border border-slate-700 text-sm flex items-center gap-3 transition-all">
+    <span id="toastDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0"></span>
+    <span id="toastMessage" class="flex-1"></span>
+    <button onclick="hideToast()" class="text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 rounded">إغلاق</button>
+  </div>
+
+  <!-- Top Header Bar -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm no-print">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
+      <!-- Right: Menu Button + Brand Title + Developer Credit -->
+      <div class="flex items-center gap-2.5 min-w-0">
+        <button id="openDrawerBtn" onclick="toggleDrawer(true)" aria-label="فتح الفهرس" class="lg:hidden p-2.5 rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 active:scale-95 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        <div class="flex items-center gap-2.5 min-w-0 cursor-pointer" onclick="switchView('curriculum')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white flex items-center justify-center font-extrabold text-base shadow-md shadow-indigo-200 shrink-0">
+            OM2
+          </div>
+          <div class="truncate">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h1 class="text-sm sm:text-base font-extrabold text-slate-900 truncate">منصة إدارة المكاتب 2</h1>
+              <span class="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-800 text-[10px] sm:text-[11px] font-bold whitespace-nowrap">
+                المطور: Haitham Afana
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-500 truncate">
+              Office Management II • د. وائل نصار بداح • Developed by Haitham Afana
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center: Instant Search Input -->
+      <div class="flex-1 max-w-md hidden sm:block relative">
+        <div class="relative flex items-center">
+          <input
+            id="globalSearchInput"
+            type="text"
+            oninput="handleSearchInput(this.value)"
+            placeholder="ابحث في الفصول، القواعد، المصطلحات، النماذج..."
+            class="w-full rounded-xl bg-slate-100 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 py-2 pr-9 pl-8 text-xs sm:text-sm outline-none transition"
+          />
+          <svg class="w-4 h-4 text-slate-400 absolute right-3 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+          </svg>
+          <button id="clearSearchBtn" onclick="clearSearch()" title="مسح البحث" class="hidden absolute left-2.5 text-slate-400 hover:text-rose-600 text-xs font-bold">✕</button>
+        </div>
+      </div>
+
+      <!-- Left: Progress Pill -->
+      <div class="flex items-center gap-2 shrink-0">
+        <div onclick="switchView('progress')" class="cursor-pointer flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 px-3 py-1.5 rounded-xl transition" title="عرض تقدمك الدراسي">
+          <div class="text-right">
+            <div class="text-[10px] font-semibold text-indigo-600 leading-tight">الإنجاز العام</div>
+            <div id="headerProgressPct" class="text-xs sm:text-sm font-extrabold text-indigo-900 leading-tight">0%</div>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-indigo-700 font-bold text-xs shadow-inner border border-indigo-100">
+            <span id="headerChaptersCount">0/5</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Search Bar -->
+    <div class="sm:hidden px-3 pb-2.5">
+      <div class="relative flex items-center">
+        <input
+          id="mobileSearchInput"
+          type="text"
+          oninput="handleSearchInput(this.value)"
+          placeholder="ابحث في كامل المنهج (عربي / إنجليزي)..."
+          class="w-full rounded-xl bg-slate-100 border border-slate-200 focus:bg-white focus:border-indigo-500 py-2 pr-9 pl-8 text-xs outline-none"
+        />
+        <svg class="w-4 h-4 text-slate-400 absolute right-3 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z" />
+        </svg>
+        <button id="clearMobileSearchBtn" onclick="clearSearch()" class="hidden absolute left-2.5 text-slate-400 hover:text-rose-600 text-xs font-bold">✕</button>
+      </div>
+    </div>
+
+    <!-- Primary Navigation Tabs -->
+    <nav class="bg-slate-50/90 border-t border-slate-200/80 overflow-x-auto">
+      <div class="max-w-7xl mx-auto px-3 sm:px-6 flex items-center gap-1.5 sm:gap-2 py-1.5">
+        <button data-nav="curriculum" onclick="switchView('curriculum')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
+          <span>📚</span>
+          <span>الفصول والمنهج الكامل</span>
+        </button>
+        <button data-nav="flashcards" onclick="switchView('flashcards')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
+          <span>🃏</span>
+          <span>بطاقات المراجعة (Flashcards)</span>
+        </button>
+        <button data-nav="quiz" onclick="switchView('quiz')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
+          <span>📝</span>
+          <span>الاختبار التفاعلي</span>
+        </button>
+        <button data-nav="summaries" onclick="switchView('summaries')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
+          <span>📊</span>
+          <span>ملخصات وجداول مقارنة</span>
+        </button>
+        <button data-nav="progress" onclick="switchView('progress')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition flex items-center gap-1.5">
+          <span>🎯</span>
+          <span>لوحة التقدم</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Live Search Results Drawer / Panel (shown when searching) -->
+  <section id="searchResultsPanel" class="hidden bg-amber-50/95 border-b-2 border-amber-300 shadow-inner no-print">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-lg bg-amber-200/80 text-amber-950 text-xs font-extrabold">نتائج البحث الفوري</span>
+          <span id="searchSummaryText" class="text-xs sm:text-sm text-slate-700 font-semibold"></span>
+        </div>
+        <button onclick="clearSearch()" class="text-xs font-bold text-rose-700 hover:underline px-2 py-1">إغلاق البحث</button>
+      </div>
+      <div id="searchResultsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto p-0.5"></div>
+    </div>
+  </section>
+
+  <!-- Main Content Layout -->
+  <div class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-5 flex gap-6 items-start">
+
+    <!-- Mobile / Tablet Slide-over Drawer Backdrop -->
+    <div id="drawerBackdrop" onclick="toggleDrawer(false)" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden"></div>
+
+    <!-- Sidebar / Drawer Navigation -->
+    <aside id="sidebarDrawer" class="fixed lg:sticky top-0 lg:top-32 right-0 h-full lg:h-auto w-80 max-w-[85vw] bg-white lg:bg-transparent z-50 lg:z-10 p-4 lg:p-0 overflow-y-auto lg:overflow-visible shadow-2xl lg:shadow-none translate-x-full lg:translate-x-0 transition-transform duration-300 shrink-0 no-print">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-sm font-extrabold text-slate-900">فهرس المنهج (5 فصول)</h2>
+            <p class="text-[11px] text-slate-500">اختر فصلاً أو انتقل مباشرة لقسم</p>
+          </div>
+          <button onclick="toggleDrawer(false)" class="lg:hidden p-1.5 rounded-lg text-slate-500 hover:bg-slate-100">✕</button>
+        </div>
+
+        <!-- Chapters Quick List in Sidebar -->
+        <div id="sidebarChaptersList" class="space-y-1.5"></div>
+
+        <!-- Current Chapter Sections Outline -->
+        <div class="pt-2 border-t border-slate-100">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">محاور الفصل الحالي</div>
+          <div id="sidebarSectionsOutline" class="space-y-1 max-h-72 overflow-y-auto pr-1 text-xs"></div>
+        </div>
+
+        <!-- Developer & Study Tip Box -->
+        <div class="rounded-xl bg-gradient-to-br from-indigo-50 to-slate-100 border border-indigo-100 p-3 text-xs text-slate-700 leading-relaxed space-y-2">
+          <div class="font-bold text-indigo-900 flex items-center gap-1.5">
+            <span>👨‍💻</span>
+            <span>المطور: Haitham Afana</span>
+          </div>
+          <p>
+            كل بطاقة شرح تجمع بين الشرح العربي الواضح والمصطلحات الإنجليزية وقواعد الكتاب الأصلية (AR/EN)، ثم اختبر نفسك في قسم الاختبار التفاعلي.
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Dynamic View Container -->
+    <main class="flex-1 min-w-0 w-full space-y-6">
+
+      <!-- VIEW 1: CURRICULUM & COMPLETE STUDY NOTES -->
+      <section id="view-curriculum" class="app-view space-y-5">
+        <!-- Quick Chapter Switcher Pills -->
+        <div id="chapterTabsBar" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2.5 no-print"></div>
+
+        <!-- Active Chapter Header Card -->
+        <div id="chapterHeroCard" class="rounded-2xl bg-gradient-to-l from-indigo-900 via-indigo-800 to-slate-900 text-white p-5 sm:p-6 shadow-md relative overflow-hidden"></div>
+
+        <!-- Active Chapter Topics Container -->
+        <div id="chapterTopicsContainer" class="space-y-4"></div>
+
+        <!-- Bottom Chapter Navigation -->
+        <div id="chapterBottomNav" class="flex flex-wrap items-center justify-between gap-3 pt-2 no-print"></div>
+      </section>
+
+      <!-- VIEW 2: INTERACTIVE FLASHCARDS -->
+      <section id="view-flashcards" class="app-view hidden space-y-5">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 class="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2">
+              <span>🃏</span>
+              <span>بطاقات المراجعة التفاعلية (Flashcards)</span>
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">انقر على البطاقة لقلبها ومشاهدة الإجابة أو القاعدة، ثم حدّد حالتها لتحديث نسبة إتقانك.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="fcChapterFilter" onchange="initFlashcards()" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs sm:text-sm font-bold text-slate-700 focus:border-indigo-500 outline-none">
+              <option value="all">جميع الفصول (الفصول 1 - 5)</option>
+              <option value="1">الفصل 1: إدارة السجلات والملفات</option>
+              <option value="2">الفصل 2: تخطيط الاجتماعات والمؤتمرات</option>
+              <option value="3">الفصل 3: الأتمتة والمعدات المكتبية</option>
+              <option value="4">الفصل 4: جدولة المواعيد واستقبال الزوار</option>
+              <option value="5">الفصل 5: اللوجستيات والتوزيع والتموين</option>
+            </select>
+            <button onclick="shuffleFlashcards()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold transition">
+              🔀 خلط البطاقات
+            </button>
+          </div>
+        </div>
+
+        <!-- Flashcard Stats Bar -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="bg-white rounded-2xl border border-slate-200 p-3.5 text-center">
+            <div class="text-xs text-slate-500 font-semibold">عدد البطاقات المعروضة</div>
+            <div id="fcTotalCount" class="text-lg sm:text-2xl font-extrabold text-indigo-700 mt-0.5">0</div>
+          </div>
+          <div class="bg-white rounded-2xl border border-emerald-200 bg-emerald-50/40 p-3.5 text-center">
+            <div class="text-xs text-emerald-700 font-semibold">بطاقات أتقنتها</div>
+            <div id="fcMasteredCount" class="text-lg sm:text-2xl font-extrabold text-emerald-700 mt-0.5">0</div>
+          </div>
+          <div class="bg-white rounded-2xl border border-amber-200 bg-amber-50/40 p-3.5 text-center">
+            <div class="text-xs text-amber-800 font-semibold">تحتاج مراجعة</div>
+            <div id="fcReviewCount" class="text-lg sm:text-2xl font-extrabold text-amber-700 mt-0.5">0</div>
+          </div>
+        </div>
+
+        <!-- Flashcard Stage -->
+        <div id="flashcardStage" class="max-w-3xl mx-auto space-y-4">
+          <div class="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-600 px-1">
+            <span id="fcCounterText">بطاقة 1 من 1</span>
+            <span id="fcCurrentStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs bg-slate-200 text-slate-700">غير مصنفة</span>
+          </div>
+
+          <!-- 3D Card -->
+          <div onclick="flipCurrentFlashcard()" class="perspective-1200 cursor-pointer select-none">
+            <div id="flashcardInner" class="preserve-3d relative min-h-[280px] sm:min-h-[320px] w-full">
+              <!-- Front -->
+              <div class="backface-hidden absolute inset-0 bg-white rounded-2xl border-2 border-indigo-100 hover:border-indigo-300 shadow-md p-6 sm:p-8 flex flex-col justify-between transition">
+                <div class="flex items-center justify-between gap-2">
+                  <span id="fcChapterTag" class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-extrabold">الفصل 1</span>
+                  <span class="text-xs text-slate-400 font-semibold">انقر لقلب البطاقة ↻</span>
+                </div>
+                <div class="my-auto text-center space-y-3 py-4">
+                  <div id="fcFrontEn" class="text-xs sm:text-sm font-bold text-indigo-500 tracking-wide"></div>
+                  <h3 id="fcFrontAr" class="text-lg sm:text-2xl font-extrabold text-slate-900 leading-relaxed"></h3>
+                </div>
+                <div class="text-center text-xs text-slate-400">الوجه الأمامي • السؤال أو المصطلح</div>
+              </div>
+
+              <!-- Back -->
+              <div class="backface-hidden rotate-y-180 absolute inset-0 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-2xl border-2 border-indigo-700 shadow-lg p-6 sm:p-8 flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="px-3 py-1 rounded-full bg-white/15 text-indigo-100 text-xs font-bold">الإجابة والشرح</span>
+                  <span class="text-xs text-indigo-200">انقر للعودة للوجه الأمامي ↺</span>
+                </div>
+                <div class="my-auto space-y-3 py-4 overflow-y-auto max-h-56">
+                  <p id="fcBackAr" class="text-base sm:text-lg font-bold text-white leading-relaxed"></p>
+                  <p id="fcBackDetail" class="text-xs sm:text-sm text-indigo-100/90 leading-relaxed border-t border-white/15 pt-2.5"></p>
+                </div>
+                <div class="text-center text-xs text-indigo-300">الوجه الخلفي • المعلومة المعتمدة من المنهج</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mastery & Navigation Controls -->
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+              <button onclick="prevFlashcard()" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 text-xs sm:text-sm font-bold shadow-sm transition">
+                → السابقة
+              </button>
+              <button onclick="flipCurrentFlashcard()" class="px-4 py-2.5 rounded-xl bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 text-indigo-800 text-xs sm:text-sm font-bold transition">
+                ↻ قلب البطاقة
+              </button>
+              <button onclick="nextFlashcard()" class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 text-xs sm:text-sm font-bold shadow-sm transition">
+                التالية ←
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-center">
+              <button onclick="markFlashcardStatus('re
